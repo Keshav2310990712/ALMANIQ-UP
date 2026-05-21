@@ -4,6 +4,30 @@ export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"
 });
 
+// Request interceptor to automatically attach authorization bearer tokens to all outgoing requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("almaniq_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+export async function signup(payload) {
+  const response = await api.post("/auth/signup", payload);
+  return response.data.data;
+}
+
+export async function signin(payload) {
+  const response = await api.post("/auth/signin", payload);
+  return response.data.data;
+}
+
 export async function getEventTypes() {
   const response = await api.get("/event-types");
   return response.data.data;
