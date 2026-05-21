@@ -7,6 +7,8 @@ import availabilityRoutes from "./routes/availability.routes.js";
 import bookingRoutes from "./routes/bookings.routes.js";
 import eventTypeRoutes from "./routes/eventTypes.routes.js";
 import slotsRoutes from "./routes/slots.routes.js";
+import publicRoutes from "./routes/public.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 import { notFoundHandler, errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
@@ -22,8 +24,10 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/event-types", authMiddleware, eventTypeRoutes);
 app.use("/api/slots", authMiddleware, slotsRoutes);
-app.use("/api/bookings", authMiddleware, bookingRoutes);
+app.use("/api/bookings", bookingRoutes);
 app.use("/api/availability", authMiddleware, availabilityRoutes);
+app.use("/api/public", publicRoutes);
+app.use("/api/analytics", authMiddleware, analyticsRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

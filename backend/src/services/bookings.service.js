@@ -119,6 +119,22 @@ export async function cancelBooking(uid, userId) {
   return updatedBooking;
 }
 
+export async function getBookingByUidPublic(uid) {
+  const booking = await bookingRepository.getBookingByUid(uid);
+  if (!booking) {
+    throw new AppError("Booking not found", 404);
+  }
+
+  const eventTypes = await eventTypeRepository.listEventTypes({ id: booking.eventTypeId });
+  const eventType = Array.isArray(eventTypes) ? eventTypes[0] : null;
+
+  return {
+    ...booking,
+    eventName: eventType ? eventType.title : "Scheduled Meeting",
+    eventDescription: eventType ? eventType.description : ""
+  };
+}
+
 export async function rescheduleBooking(uid, payload, userId) {
   try {
     const availability = await availabilityRepository.getAvailability({ userId });

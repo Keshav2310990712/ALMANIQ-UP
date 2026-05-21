@@ -9,6 +9,8 @@ import HomePage from "./pages/HomePage";
 import Signin from "./pages/Signin";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
+import BookingConfirmedPage from "./pages/BookingConfirmedPage";
+import BookDispatcher from "./pages/BookDispatcher";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -28,7 +30,8 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             
             {/* Public booking pages (no auth required) */}
-            <Route path="/book/:slug" element={<BookingPage />} />
+            <Route path="/book/:identifier" element={<BookDispatcher />} />
+            <Route path="/booking-confirmed/:uid" element={<BookingConfirmedPage />} />
 
             {/* Protected dashboard and configuration routes */}
             <Route

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Copy, Pencil, Trash2, ExternalLink, Clock, Calendar } from 'lucide-react';
+import { Plus, Copy, Pencil, Trash2, ExternalLink, Clock, Calendar, BarChart3, Sparkles, TrendingUp, Percent } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -7,7 +7,7 @@ import { toast } from '@/hooks/use-toast';
 import EventTypeDialog from '@/components/EventTypeDialog';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createEventType, deleteEventType, getEventTypes, updateEventType } from '@/lib/api';
+import { createEventType, deleteEventType, getEventTypes, updateEventType, getAnalytics } from '@/lib/api';
 import Skeleton from '@/components/ui/skeleton';
 
 const borderColors = [
@@ -26,10 +26,15 @@ export default function EventTypes() {
         queryKey: ['event-types'],
         queryFn: getEventTypes,
     });
+    const { data: analytics, isLoading: loadingAnalytics } = useQuery({
+        queryKey: ['analytics'],
+        queryFn: getAnalytics,
+    });
     const invalidateEventTypeQueries = async () => {
         await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['event-types'] }),
-            queryClient.invalidateQueries({ queryKey: ['event-type'] })
+            queryClient.invalidateQueries({ queryKey: ['event-type'] }),
+            queryClient.invalidateQueries({ queryKey: ['analytics'] })
         ]);
     };
     const createEventMutation = useMutation({
@@ -137,6 +142,64 @@ export default function EventTypes() {
             New Event Type
           </Button>
         </div>
+
+        {/* Analytics Section */}
+        {loadingAnalytics ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8 animate-pulse">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="rounded-2xl border border-border/80 bg-card p-5 space-y-3 shadow-sm">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-7 w-16" />
+              </div>
+            ))}
+          </div>
+        ) : analytics ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {/* Total Bookings */}
+            <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between group">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Bookings</p>
+                <h3 className="text-2xl font-extrabold text-foreground tracking-tight">{analytics.totalBookings}</h3>
+              </div>
+              <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+            </div>
+
+            {/* Most Booked Event */}
+            <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between group">
+              <div className="space-y-1 max-w-[70%]">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Most Booked Event</p>
+                <h3 className="text-base font-bold text-foreground tracking-tight truncate" title={analytics.mostBookedEvent}>{analytics.mostBookedEvent}</h3>
+              </div>
+              <div className="p-3 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                <Sparkles className="w-5 h-5" />
+              </div>
+            </div>
+
+            {/* Busiest Day */}
+            <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between group">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Busiest Day</p>
+                <h3 className="text-2xl font-extrabold text-foreground tracking-tight">{analytics.busiestDay}</h3>
+              </div>
+              <div className="p-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+            </div>
+
+            {/* Cancellation Rate */}
+            <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between group">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cancellation Rate</p>
+                <h3 className="text-2xl font-extrabold text-foreground tracking-tight">{analytics.cancellationRate}</h3>
+              </div>
+              <div className="p-3 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                <Percent className="w-5 h-5" />
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {loading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

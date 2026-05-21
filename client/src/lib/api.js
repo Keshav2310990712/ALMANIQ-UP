@@ -72,6 +72,11 @@ export async function getBookings() {
   return response.data.data;
 }
 
+export async function getBookingByUid(uid) {
+  const response = await api.get(`/bookings/${uid}`);
+  return response.data.data;
+}
+
 export async function cancelBooking(uid) {
   const response = await api.patch(`/bookings/${uid}/cancel`);
   return response.data.data;
@@ -105,5 +110,15 @@ export async function updateBreakMode(is_on_break) {
   const response = await api.patch("/availability/break", {
     is_on_break
   });
+  return response.data.data;
+}
+
+export async function getPublicProfile(username) {
+  const response = await api.get(`/public/${username}`);
+  return response.data.data;
+}
+
+export async function getAnalytics() {
+  const response = await api.get("/analytics");
   return response.data.data;
 }

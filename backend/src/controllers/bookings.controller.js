@@ -45,3 +45,12 @@ export async function rescheduleBooking(req, res, next) {
     return next(error);
   }
 }
+
+export async function getBookingByUidPublic(req, res, next) {
+  try {
+    const data = await bookingService.getBookingByUidPublic(req.params.uid);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+}

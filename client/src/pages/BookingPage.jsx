@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isBefore, startOfDay, startOfWeek, endOfWeek, addMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, Clock, Calendar, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,8 +20,9 @@ function getHeatmapStyles(score = 0) {
     };
 }
 
-export default function BookingPage() {
+export default function BookingPage({ event: initialEvent }) {
     const { slug } = useParams();
+    const navigate = useNavigate();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedTime, setSelectedTime] = useState(null);
@@ -36,11 +37,12 @@ export default function BookingPage() {
     const calStart = startOfWeek(monthStart);
     const calEnd = endOfWeek(monthEnd);
     const calDays = eachDayOfInterval({ start: calStart, end: calEnd });
-    const { data: event, isLoading: isLoadingEventTypes, isError: isEventTypesError } = useQuery({
+    const { data: eventData, isLoading: isLoadingEventTypes, isError: isEventTypesError } = useQuery({
         queryKey: ['event-type', slug],
         queryFn: () => getEventTypeBySlug(slug),
-        enabled: Boolean(slug),
+        enabled: !initialEvent && Boolean(slug),
     });
+    const event = initialEvent || eventData;
     const { data: availability } = useQuery({
         queryKey: ['availability'],
         queryFn: getAvailability,
@@ -82,7 +84,7 @@ export default function BookingPage() {
         if (!event || !selectedDate || !selectedTime)
             return;
         try {
-            await createBookingMutation.mutateAsync({
+            const result = await createBookingMutation.mutateAsync({
                 eventTypeId: event.id,
                 name,
                 email,
@@ -95,7 +97,11 @@ export default function BookingPage() {
                 queryClient.invalidateQueries({ queryKey: ['heatmap', event.id] }),
                 queryClient.invalidateQueries({ queryKey: ['bookings'] })
             ]);
-            setConfirmed(true);
+            if (result && result.uid) {
+                navigate(`/booking-confirmed/${result.uid}`);
+            } else {
+                setConfirmed(true);
+            }
         }
         catch (error) {
             toast({
@@ -104,11 +110,13 @@ export default function BookingPage() {
             });
         }
     };
-    if (isLoadingEventTypes || isEventTypesError || !event || !event.active) {
+    const isLoading = !initialEvent && isLoadingEventTypes;
+    const isError = !initialEvent && isEventTypesError;
+    if (isLoading || isError || !event || !event.active) {
         return (<div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-foreground mb-2">{isLoadingEventTypes ? 'Loading event' : isEventTypesError ? 'Failed to load event' : 'Event not found'}</h1>
-          <p className="text-sm text-muted-foreground mb-4">{isLoadingEventTypes ? 'Please wait while we load this booking page.' : isEventTypesError ? 'There was a problem loading this booking page. Please try again.' : 'This booking link may be invalid or the event is inactive.'}</p>
+          <h1 className="text-xl font-semibold text-foreground mb-2">{isLoading ? 'Loading event' : isError ? 'Failed to load event' : 'Event not found'}</h1>
+          <p className="text-sm text-muted-foreground mb-4">{isLoading ? 'Please wait while we load this booking page.' : isError ? 'There was a problem loading this booking page. Please try again.' : 'This booking link may be invalid or the event is inactive.'}</p>
           <Link to="/"><Button variant="outline">Go Home</Button></Link>
         </div>
       </div>);
