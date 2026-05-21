@@ -70,17 +70,25 @@ export default function AppSidebar() {
       <nav className="flex flex-wrap gap-2 px-4 pb-4 sm:px-6 lg:flex-1 lg:flex-col lg:px-4">
         {navItems.map(item => {
             const active = location.pathname === item.to;
-            return (<Link key={item.to} to={item.to} className={`flex min-w-[140px] items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition-colors lg:mb-0.5 lg:min-w-0 ${active
-                    ? 'bg-secondary text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
-              <item.icon className="w-4 h-4"/>
+            return (<Link key={item.to} to={item.to} className={`flex min-w-[140px] items-center gap-3 rounded-xl py-3 text-sm font-medium transition-all duration-200 lg:mb-0.5 lg:min-w-0 border-l-2 ${active
+                    ? 'bg-brand/10 text-brand border-brand pl-[12px] pr-[14px]'
+                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent pl-[14px] pr-[14px]'}`}>
+              <item.icon className={`w-4 h-4 transition-transform duration-200 ${active ? 'scale-110' : ''}`}/>
               {item.label}
             </Link>);
         })}
-        <div className="flex min-w-[140px] items-center justify-between rounded-xl border border-border bg-background px-3.5 py-3 text-sm lg:min-w-0">
-          <div>
-            <p className="font-medium text-foreground">{isOnBreak ? 'On Break' : 'Available'}</p>
-            <p className="text-xs text-muted-foreground">Pause bookings instantly</p>
+        <div className="flex min-w-[140px] items-center justify-between rounded-xl border border-border bg-background px-3.5 py-3 text-sm lg:min-w-0 shadow-sm transition-all duration-200 hover:border-border/80">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-foreground">{isOnBreak ? 'On Break' : 'Available'}</span>
+              {isOnBreak && (
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Pause bookings instantly</p>
           </div>
           <Switch checked={isOnBreak} disabled={breakModeMutation.isPending} onCheckedChange={(checked) => breakModeMutation.mutate(checked)}/>
         </div>
@@ -100,7 +108,7 @@ export default function AppSidebar() {
       <div className="hidden border-t border-border p-4 lg:block">
         <div className="flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/50 px-3 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-bold text-foreground">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-brand to-purple-500 text-sm font-bold text-white shadow-sm border border-background/10">
               {initials}
             </div>
             <div className="min-w-0">

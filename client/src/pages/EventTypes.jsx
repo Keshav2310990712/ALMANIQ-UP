@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Copy, Pencil, Trash2, ExternalLink } from 'lucide-react';
+import { Plus, Copy, Pencil, Trash2, ExternalLink, Clock, Calendar } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -8,6 +8,16 @@ import EventTypeDialog from '@/components/EventTypeDialog';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createEventType, deleteEventType, getEventTypes, updateEventType } from '@/lib/api';
+import Skeleton from '@/components/ui/skeleton';
+
+const borderColors = [
+  'border-l-indigo-500 dark:border-l-indigo-400',
+  'border-l-emerald-500 dark:border-l-emerald-400',
+  'border-l-rose-500 dark:border-l-rose-400',
+  'border-l-amber-500 dark:border-l-amber-400',
+  'border-l-violet-500 dark:border-l-violet-400'
+];
+
 export default function EventTypes() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editing, setEditing] = useState(null);
@@ -26,18 +36,37 @@ export default function EventTypes() {
         mutationFn: createEventType,
         onSuccess: async () => {
             await invalidateEventTypeQueries();
+            toast({
+                title: 'Event type created',
+                description: 'Your new event type has been created successfully.'
+            });
         }
     });
     const updateEventMutation = useMutation({
         mutationFn: ({ id, payload }) => updateEventType(id, payload),
-        onSuccess: async () => {
+        onSuccess: async (data, variables) => {
             await invalidateEventTypeQueries();
+            if (variables && variables.payload && Object.keys(variables.payload).length === 1 && 'active' in variables.payload) {
+                toast({
+                    title: variables.payload.active ? 'Event type enabled' : 'Event type disabled',
+                    description: `The event type is now ${variables.payload.active ? 'active' : 'hidden'}.`
+                });
+            } else {
+                toast({
+                    title: 'Event type updated',
+                    description: 'Your changes have been saved successfully.'
+                });
+            }
         }
     });
     const deleteEventMutation = useMutation({
         mutationFn: deleteEventType,
         onSuccess: async () => {
             await invalidateEventTypeQueries();
+            toast({
+                title: 'Event type deleted',
+                description: 'The event type was successfully removed.'
+            });
         }
     });
     const getEventPath = (slug) => `/book/${slug}`;
@@ -109,54 +138,140 @@ export default function EventTypes() {
           </Button>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          {loading ? (<div className="p-12 text-center text-muted-foreground text-sm">
-              Loading event types...
-            </div>) : eventTypes.length === 0 ? (<div className="p-12 text-center text-muted-foreground text-sm">
-              No event types yet. Create your first one.
-            </div>) : (eventTypes.map((event, i) => (<div key={event.id} className={`px-4 py-5 transition-colors hover:bg-secondary/30 sm:px-6 ${i < eventTypes.length - 1 ? 'border-b border-border' : ''}`}>
-                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                  <div className="flex min-w-0 items-start gap-4">
-                    <div className={`mt-1 h-12 w-1.5 rounded-full ${event.active ? 'bg-brand' : 'bg-border'}`}/>
-                    <div className="min-w-0 space-y-3">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                        <h3 className="text-lg font-semibold text-foreground">{event.title}</h3>
-                        <span className="text-sm text-muted-foreground">{getEventPath(event.slug)}</span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-foreground">
-                          {event.duration}m
-                        </span>
-                        {event.description ? (<p className="min-w-0 text-sm text-muted-foreground">{event.description}</p>) : null}
-                      </div>
+        {loading ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm border-l-4 border-l-muted">
+                <div className="flex justify-between items-center">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <Skeleton className="h-8 w-16" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : eventTypes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card p-12 text-center shadow-sm max-w-2xl mx-auto my-8">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10 text-brand mb-4">
+              <Calendar className="h-8 w-8" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">No event types yet</h3>
+            <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+              No event types yet. Create your first one to get a booking link.
+            </p>
+            <Button onClick={() => { setEditing(null); setDialogOpen(true); }} className="mt-4 gap-2 rounded-xl">
+              <Plus className="w-4 h-4" />
+              Create Event Type
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {eventTypes.map((event, i) => {
+              const borderColorClass = borderColors[i % borderColors.length];
+              return (
+                <div 
+                  key={event.id} 
+                  className={`flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-sm transition-all duration-200 hover:shadow-md hover:border-border/80 border-l-4 ${borderColorClass}`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <h3 className="text-base font-semibold text-foreground tracking-tight line-clamp-1">
+                        {event.title}
+                      </h3>
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        event.active 
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {event.active ? 'Enabled' : 'Disabled'}
+                      </span>
                     </div>
+
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{event.duration} mins</span>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground truncate font-mono bg-secondary/50 px-2 py-1 rounded">
+                      /book/{event.slug}
+                    </p>
+
+                    {event.description ? (
+                      <p className="text-sm text-muted-foreground line-clamp-2 h-10">
+                        {event.description}
+                      </p>
+                    ) : (
+                      <div className="h-10 text-xs text-muted-foreground/40 italic flex items-center">
+                        No description provided.
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center xl:justify-end">
-                    <div className="flex items-center gap-3 self-start sm:self-auto">
-                      {!event.active ? <span className="text-sm text-muted-foreground">Hidden</span> : null}
-                      <Switch checked={event.active} onCheckedChange={() => toggleEvent(event.id)}/>
+                  <div className="flex items-center justify-between border-t border-border/60 pt-4 mt-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-muted-foreground">Status</span>
+                      <Switch 
+                        checked={event.active} 
+                        onCheckedChange={() => toggleEvent(event.id)}
+                        className="scale-90"
+                      />
                     </div>
-                    <div className="flex w-full overflow-hidden rounded-xl border border-border bg-background shadow-sm sm:w-auto">
-                      <Link to={getEventHref(event.slug)} target="_blank">
-                        <Button variant="ghost" size="icon" className="h-11 w-11 rounded-none border-r border-border">
-                          <ExternalLink className="w-4 h-4"/>
-                        </Button>
-                      </Link>
-                      <Button variant="ghost" size="icon" className="h-11 w-11 rounded-none border-r border-border" onClick={() => copyLink(event.slug)}>
-                        <Copy className="w-4 h-4"/>
+
+                    <div className="flex items-center gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        title="View Live Booking Page"
+                        className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary" 
+                        onClick={() => window.open(getEventHref(event.slug), '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-11 w-11 rounded-none border-r border-border" onClick={() => { setEditing(event); setDialogOpen(true); }}>
-                        <Pencil className="w-4 h-4"/>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        title="Copy Link"
+                        className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary" 
+                        onClick={() => copyLink(event.slug)}
+                      >
+                        <Copy className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-11 w-11 rounded-none" onClick={() => removeEvent(event.id)}>
-                        <Trash2 className="w-4 h-4"/>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        title="Edit Event Type"
+                        className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary" 
+                        onClick={() => { setEditing(event); setDialogOpen(true); }}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        title="Delete Event Type"
+                        className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10" 
+                        onClick={() => removeEvent(event.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
                 </div>
-              </div>)))}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <EventTypeDialog open={dialogOpen} onOpenChange={setDialogOpen} onSave={handleSave} initial={editing}/>
